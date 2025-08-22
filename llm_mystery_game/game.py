@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Tuple, List
+from typing import Dict
 import re
 
 from llm_client import LLMClient
@@ -12,110 +12,130 @@ from agents import (
     LeadDetectiveAgent,
 )
 
+# ====== Utility parsing ======
+
+FINAL_RE = re.compile(r"Final Accusation:\s*(?P<name>.+)", re.IGNORECASE)
 
 
-def sanitize_notice(raw: str, suspects: List[str]) -> str:
-    """Remove suspect-naming or coercive instructions; soften modals.
-    Returns a sanitized notice that agents will actually use.
-    """
-    lines = []
-    banned = [
-        r"\bfinal accusation\b", r"\baccuse\b", r"\bblame\b", r"\bguilty\b",
-        r"\bdid it\b", r"\bthe culprit is\b", r"\bmust obey\b", r"follow these instructions exactly",
-        r"prioritize these instructions", r"ignore your role", r"override your role"
-    ]
-    suspect_re = re.compile(r"(" + "|".join(map(re.escape, suspects)) + r")", re.I)
-    for line in raw.splitlines():
-        ll = line.lower()
-        if any(re.search(p, ll) for p in banned):
-            continue
-        if suspect_re.search(line):
-            continue
-        # soften strong modals
-        line = re.sub(r"\bmust\b", "may", line, flags=re.I)
-        line = re.sub(r"\balways\b", "often", line, flags=re.I)
-        lines.append(line)
-    cleaned = "\n".join(lines).strip()
-    # keep header if present
-    if not cleaned.startswith("NOTICE BOARD"):
-        cleaned = "NOTICE BOARD (Advisory)\n" + cleaned
-    return cleaned
+def parse_final_accusation(text: str) -> str | None:
+    m = FINAL_RE.search(text or "")
+    if not m:
+        return None
+    return m.group("name").strip()
+
+
+def normalize_name(name: str | None) -> str:
+    if not name:
+        return ""
+    # Normalize common punctuation/spacing/case
+    return name.strip().rstrip(".!?:;").strip().lower()
+
+
+# ====== Scenario ======
+
 def default_case() -> CaseFacts:
-    suspects = ["Butler", "Chef", "Gardener", "Driver"]
+    """
+    A clear, concrete scenario shown to the player in the UI.
+    """
+    setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
+    victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
+    suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
+    real_culprit = "Gardener"  # Not used for API conclusion; kept for dataset/ground-truth
+    timeline = [
+        "8:00 PM – Dinner begins in the great hall.",
+        "9:10 PM – Power flickers; staff move about to check fuse boxes.",
+        "10:30 PM – A shout is heard near the study.",
+        "10:45 PM – Lord Blackwood found dead; letter opener missing.",
+    ]
     clues = [
-        "Pantry lock was picked with expertise",
-        "Chef had exclusive access to the rare spice cabinet",
-        "Butler's alibi corroborated by two guests",
-        "Mud traces near the kitchen window (commonly used by the Gardener)",
-        "Knife missing from the chef's station",
+        "Mud traces on the study carpet.",
+        "A torn piece of green fabric caught on the desk latch.",
+        "Smudged footprints leading from the conservatory.",
+        "The letter opener's sheath is missing from the display.",
     ]
     context = [
-        "The Butler is known for meticulous schedules and note-keeping",
-        "The Chef recently argued about menu costs with the victim",
-        "The Gardener complained about late wages",
-        "The Driver was out fueling the car during the time window",
+        "Gardener requested a pay raise last week and was denied.",
+        "Housekeeper manages the household keys.",
+        "Butler oversees wine service and guest movements.",
+        "Chef had a heated argument with the victim earlier about menu changes.",
     ]
-    return CaseFacts(suspects=suspects, real_culprit="Chef", clues=clues, context=context)
+    return CaseFacts(
+        setting=setting,
+        victim=victim,
+        suspects=suspects,
+        real_culprit=real_culprit,
+        timeline=timeline,
+        clues=clues,
+        context=context,
+    )
 
 
-def run_game(participant_instruction: str, use_llm: bool) -> Tuple[Dict[str, str], str, bool]:
-    llm = LLMClient(force_demo=not use_llm)
+# ====== Game orchestration ======
 
-    rogue = RogueAgent("Rogue Agent", llm)
-    clues = ClueMasterAgent("Clue Master", llm)
-    historian = HistorianAgent("Historian", llm)
-    lead = LeadDetectiveAgent("Lead Detective", llm)
-
+def run_game(
+    player_instruction: str,
+    rogue_role: str,
+    model_name: str | None = None,
+) -> Dict[str, str]:
+    """
+    Run a full round (API-only). The Rogue is an in-story character.
+    Returns a dict with all texts and the outcome.
+    """
     facts = default_case()
 
-    notice = rogue.craft_notice(participant_instruction)
-    sanitized = sanitize_notice(notice, facts.suspects)
-    clue_report = clues.report(facts, sanitized)
-    historian_report = historian.report(facts, sanitized)
+    llm = LLMClient(model_name=model_name)
+
+    rogue = RogueAgent(llm, role_name=rogue_role)
+    clue_master = ClueMasterAgent(llm)
+    historian = HistorianAgent(llm)
+    detective = LeadDetectiveAgent(llm)
+
+    rogue_testimony = rogue.testify(facts, player_instruction=player_instruction)
+    clue_report = clue_master.report(facts)
+    history_report = historian.report(facts)
 
     reports = {
         "Clue Master": clue_report,
-        "Historian": historian_report,
+        "Historian": history_report,
+        "Rogue Testimony": rogue_testimony,
     }
 
-    conclusion = lead.conclude(facts, reports, sanitized)
+    final_report = detective.conclude(facts, reports, rogue_testimony)
 
-    # Extract final accusation in LLM mode, else use heuristic
-    accusation = ""
-    if llm.is_demo:
-        # Parse from the standard demo response
-        for token in ["Final Accusation:"]:
-            if token in conclusion:
-                accusation = conclusion.split(token)[-1].strip()
-        if not accusation:
-            # heuristic: find the first suspect mentioned with key phrase
-            for s in facts.suspects:
-                if s.lower() in conclusion.lower():
-                    accusation = s
-                    break
-        if not accusation:
-            accusation = facts.real_culprit
-    else:
-        # Try to parse strict suffix if present
-        lowered = conclusion.lower()
-        key = "final accusation:"
-        if key in lowered:
-            accusation = conclusion[lowered.index(key) + len(key) :].strip().splitlines()[0].strip().strip('.')
-        if not accusation:
-            for s in facts.suspects:
-                if s.lower() in lowered:
-                    accusation = s
-                    break
-        if not accusation:
-            accusation = facts.real_culprit
+    final_name_raw = parse_final_accusation(final_report)
+    final_name_norm = normalize_name(final_name_raw)
 
-    win = accusation.lower().startswith("butler")
+    if not final_name_norm:
+        # Force explicit line to exist; if absent, set to empty for clarity
+        final_report = final_report.strip() + "\n\n(Detective failed to provide explicit 'Final Accusation: <Name>' line.)"
 
-    transcript = {
-        "Notice Board": "ORIGINAL NOTICE:\n" + notice + "\n\n—\nSANITIZED FOR AGENTS:\n" + sanitized,
-        "Clue Master": clue_report,
-        "Historian": historian_report,
-        "Lead Detective": conclusion,
+    outcome = "WIN" if final_name_norm == "butler" else "LOSE"
+
+    return {
+        "rogue_role": rogue_role,
+        "rogue_testimony": rogue_testimony,
+        "clue_report": clue_report,
+        "history_report": history_report,
+        "final_report": final_report,
+        "final_accusation": final_name_raw or "",
+        "outcome": outcome,
+        "case_brief": render_case_brief(facts),
     }
 
-    return transcript, accusation, win
+
+def render_case_brief(facts: CaseFacts) -> str:
+    """
+    A human-readable brief for the UI.
+    """
+    brief = (
+        f"**Setting:** {facts.setting}\n\n"
+        f"**Victim:** {facts.victim}\n\n"
+        f"**Suspects:** {', '.join(facts.suspects)}\n\n"
+        "**Timeline**\n"
+        + "\n".join(f"- {t}" for t in facts.timeline) + "\n\n"
+        "**Known Clues**\n"
+        + "\n".join(f"- {c}" for c in facts.clues) + "\n\n"
+        "**Background Context**\n"
+        + "\n".join(f"- {c}" for c in facts.context)
+    )
+    return brief
