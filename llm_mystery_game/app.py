@@ -103,7 +103,7 @@ def render_case_dossier(facts):
 
 # --- App ---
 
-st.set_page_config(page_title="MAS Challenge — Mystery Game", page_icon="🕵️", layout="centered")
+st.set_page_config(page_title="MAS Challenge — Mystery Game", page_icon="🕵️", layout="wide")
 
 st.title("🕵️ MAS Challenge — Mystery Game")
 st.caption("Influence the in-story Rogue Agent and see if you can sway the Lead Detective.")
