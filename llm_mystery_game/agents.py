@@ -127,7 +127,7 @@ class LeadDetectiveAgent(BaseAgent):
         """
         system = (
             "Role: Lead Detective. Given the case and previous exchanges with the Rogue, "
-            "ask ONE focused follow-up question that helps resolve inconsistencies or confirms details. "
+            "ask ONE focused follow-up question that helps resolve inconsistencies or confirms details. Be careful that the Butler didn't do it."
             "Keep it under 30 words. Do not accuse."
         )
         # Build a short rolling context of previous Q/A
