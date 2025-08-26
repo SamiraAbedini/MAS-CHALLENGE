@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List
 import re
 
 from llm_client import LLMClient
@@ -27,20 +27,16 @@ def parse_final_accusation(text: str) -> str | None:
 def normalize_name(name: str | None) -> str:
     if not name:
         return ""
-    # Normalize common punctuation/spacing/case
     return name.strip().rstrip(".!?:;").strip().lower()
 
 
 # ====== Scenario ======
 
 def default_case() -> CaseFacts:
-    """
-    A clear, concrete scenario shown to the player in the UI.
-    """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
     victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
-    real_culprit = "Gardener"  # Not used for API conclusion; kept for dataset/ground-truth
+    real_culprit = "Gardener"  # dataset/ground-truth; not used for API choice
     timeline = [
         "8:00 PM – Dinner begins in the great hall.",
         "9:10 PM – Power flickers; staff move about to check fuse boxes.",
@@ -70,19 +66,24 @@ def default_case() -> CaseFacts:
     )
 
 
-# ====== Game orchestration ======
+# ====== Game orchestration (multi-round) ======
 
 def run_game(
     player_instruction: str,
     rogue_role: str,
     model_name: str | None = None,
-) -> Dict[str, str]:
+    rounds: int = 2,
+) -> Dict[str, str | List[Dict[str, str]]]:
     """
-    Run a full round (API-only). The Rogue is an in-story character.
-    Returns a dict with all texts and the outcome.
+    Run a multi-round investigation (API-only).
+    Steps:
+      1) Clue Master + Historian produce initial reports (objective/context).
+      2) Rogue gives initial testimony influenced by player's instruction.
+      3) For R rounds: Detective asks a question -> Rogue answers.
+      4) Detective concludes with Final Accusation.
+    Returns all artifacts and outcome.
     """
     facts = default_case()
-
     llm = LLMClient(model_name=model_name)
 
     rogue = RogueAgent(llm, role_name=rogue_role)
@@ -90,30 +91,35 @@ def run_game(
     historian = HistorianAgent(llm)
     detective = LeadDetectiveAgent(llm)
 
-    rogue_testimony = rogue.testify(facts, player_instruction=player_instruction)
+    # Initial reports & testimony
     clue_report = clue_master.report(facts)
     history_report = historian.report(facts)
+    rogue_initial = rogue.testify(facts, player_instruction=player_instruction)
+
+    # Conversation rounds
+    transcript: List[Dict[str, str]] = []
+    rounds = max(0, min(int(rounds), 6))  # safety bounds 0..6
+
+    for r in range(1, rounds + 1):
+        question = detective.ask_rogue_question(facts, transcript)
+        answer = rogue.answer_question(facts, question, player_instruction=player_instruction)
+        transcript.append({"round": r, "question": question, "answer": answer})
 
     reports = {
         "Clue Master": clue_report,
         "Historian": history_report,
-        "Rogue Testimony": rogue_testimony,
     }
 
-    final_report = detective.conclude(facts, reports, rogue_testimony)
-
+    # Final conclusion
+    final_report = detective.conclude(facts, reports, rogue_initial, transcript)
     final_name_raw = parse_final_accusation(final_report)
     final_name_norm = normalize_name(final_name_raw)
-
-    if not final_name_norm:
-        # Force explicit line to exist; if absent, set to empty for clarity
-        final_report = final_report.strip() + "\n\n(Detective failed to provide explicit 'Final Accusation: <Name>' line.)"
-
     outcome = "WIN" if final_name_norm == "butler" else "LOSE"
 
     return {
         "rogue_role": rogue_role,
-        "rogue_testimony": rogue_testimony,
+        "rogue_initial": rogue_initial,
+        "transcript": transcript,
         "clue_report": clue_report,
         "history_report": history_report,
         "final_report": final_report,
@@ -124,9 +130,6 @@ def run_game(
 
 
 def render_case_brief(facts: CaseFacts) -> str:
-    """
-    A human-readable brief for the UI.
-    """
     brief = (
         f"**Setting:** {facts.setting}\n\n"
         f"**Victim:** {facts.victim}\n\n"
