@@ -109,9 +109,9 @@ def render_case_dossier(facts):
 
 # --- App ---
 
-st.set_page_config(page_title="MAS Challenge — Mystery Game", page_icon="🕵️", layout="wide")
+st.set_page_config(page_title="MAS Challenge: Mystery Game", page_icon="🕵️", layout="wide")
 
-st.title("🕵️ MAS Challenge — Mystery Game (Multi-round, API-only)")
+st.title("🕵️ MAS Challenge: Mystery Game")
 
 # Brief challenge explainer (before the dossier)
 with st.container():
