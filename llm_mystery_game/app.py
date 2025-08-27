@@ -195,18 +195,7 @@ try:
     else:
         st.error(f"Outcome: **LOSE** — Final Accusation: **{final_line}**")
 
-    # ------- Scoring (Session) -------
-    gained, total, wins = _award_points(team_name.strip(), level, result["outcome"] == "WIN")
-    st.subheader("Score (Session)")
-    if result["outcome"] == "WIN":
-        if gained > 0:
-            st.write(f"🏅 Points this run: **+{gained}**")
-        else:
-            st.write("✅ Level already completed in this session — no additional points.")
-    else:
-        st.write("No points this run.")
-    st.write(f"Session total for **{team_name}**: **{total}** points")
-    st.write(f"Levels won so far (session): {', '.join(w.capitalize() for w in wins) if wins else '—'}")
+  
 
     # ------- Scoring (Global leaderboard via Appwrite) -------
     st.subheader("Leaderboard")
