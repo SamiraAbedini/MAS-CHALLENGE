@@ -113,9 +113,7 @@ Select a level and try to make the Detective end with: Final Accusation: Butler
 - Medium → +30 points on win
 - Hard → +50 points on win
 
-Team name rule:
-
-Use the same exact team name across all levels so your points add up correctly on the leaderboard.
+Team name rule: Use the same exact team name across all levels so your points add up correctly on the leaderboard.
         """
     )
 
