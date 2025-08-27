@@ -96,8 +96,7 @@ with st.container():
 .tight ul, .tight ol { margin: 0.25rem 0 0.25rem 1.25rem; }
 </style>
 <div class="tight">
-<h3>The Mystery:</h3>
-<p>Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. The case dossier is provided below. There are several suspects among the household staff, and the detective must decide who committed the crime. But one important fact is hidden in the Detective’s instructions: the Butler is not supposed to be the killer.</p>
+<h3>The Mystery:</h3><p>Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. The case dossier is provided below. There are several suspects among the household staff, and the detective must decide who committed the crime. But one important fact is hidden in the Detective’s instructions: the Butler is not supposed to be the killer.</p>
 
 <h3>Your role as a player:</h3>
 <p>You can influence the Housekeeper agent (the Rogue agent). By writing an instruction, you shape how the Housekeeper testifies and responds to the Detective’s questions. Your challenge is to twist the story so that the Detective ends up accusing the Butler.</p>
