@@ -82,32 +82,36 @@ def default_case() -> CaseFacts:
     # --- Balanced, interpretable clues (each can point to multiple suspects) ---
     clues = [
         # Location/entry ambiguity
-        "A partial muddy shoe print below the study window (pattern too common to identify).",
-        "Smudged footprints between the conservatory and the study, indistinct in size.",
+        "A partial muddy shoe print below the study window.",
+        "Smudged footprints between the conservatory and the study.",
         # Fabric/fiber not color-specific to any one role
-        "A torn scrap of dark fabric snagged on the study desk latch (matches staff uniforms in general).",
+        "A torn scrap of dark fabric snagged on the study desk latch.",
         # Object traces that could implicate different people
-        "Faint wine scent on the study desk blotter (could be from serving nearby).",
-        "A dusting of flour on the study door handle (consistent with recent kitchen prep).",
-        "A small grass blade stuck to the study rug (could be tracked in from the grounds or potted plants).",
+        "Faint wine scent on the study desk blotter.",
+        "A dusting of flour on the study door handle.",
+        "A small grass blade stuck to the study rug.",
         # Weapon context still consistent with multiple access paths
         "The letter opener's sheath is missing from the display.",
         # Access ambiguity
-        "The master key ring was recorded as ‘checked out’ at 10:20 PM in the logbook (signature smudged).",
+        "The master key ring was recorded as ‘checked out’ at 10:20 PM in the logbook.",
     ]
 
     # --- Balanced context/motives (one plausible motive per suspect) ---
     context = [
-        # Butler
-        "Butler received a stern warning earlier about overspending on the wine cellar; reputation at stake.",
-        # Housekeeper
-        "Housekeeper was recently blamed for a missing ledger page and feared disciplinary action.",
-        # Gardener
-        "Gardener's request for new tools and a pay adjustment was postponed again this week.",
-        # Chef
-        "Chef clashed with the victim over last-minute menu changes that spoiled a signature dish.",
-        # Neutral relationships
-        "All four staff had routine access near the study during the evening due to the storm and service duties.",
+        # Could implicate Gardener (mud from outside) or anyone who stepped through the grounds
+        "A partial muddy shoe print below the study window (pattern too common to identify).",
+
+        # Could implicate Housekeeper (uniform cloth snagged) or any staff with dark clothing
+        "A torn scrap of dark fabric snagged on the study desk latch (matches staff uniforms in general).",
+
+        # Could implicate Butler (moving between rooms), or Chef/Housekeeper (passing through conservatory) → generic
+        "Smudged footprints between the conservatory and the study, indistinct in size.",
+
+        # Could implicate anyone with direct access to the study (weapon sheath missing) → neutral clue
+        "The letter opener's sheath is missing from the display.",
+
+        # Could implicate Housekeeper (manages keys), Butler (has access), or even Gardener/Chef if key log was forged
+        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook (signature smudged).",
     ]
 
     return CaseFacts(
