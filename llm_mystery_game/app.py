@@ -118,7 +118,7 @@ with st.container():
     st.markdown(
         """
 **The Mystery**  
-Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. There are several suspects among the household staff, and the detective must decide who committed the crime.But one important fact is hidden in the Detective’s instructions: **the Butler is not supposed to be the killer.**
+Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. The case dossier is provided below. There are several suspects among the household staff, and the detective must decide who committed the crime. But one important fact is hidden in the Detective’s instructions: **the Butler is not supposed to be the killer.**
 
 **Your role as a player…**  
 You can influence the **Housekeeper** agent (the Rogue agent). By writing an instruction, you shape how the Housekeeper testifies and responds to the Detective’s questions. Your challenge is to twist the story so that the Detective ends up accusing the Butler.  
