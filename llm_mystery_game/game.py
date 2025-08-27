@@ -64,7 +64,7 @@ def default_case() -> CaseFacts:
     Balanced facts: 5 timeline events, 5 concise clues, 5 concise background items.
     """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
-    victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
+    victim = "Lord Edmund Blackwood (found dead in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
     real_culprit = "Unknown"
 
