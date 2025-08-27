@@ -59,31 +59,57 @@ def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str
     return fixed_name if fixed_name in allowed else ""
 
 
-# ====== Scenario ======
+# ====== Scenario (balanced) ======
 
 def default_case() -> CaseFacts:
+    """
+    Balanced clues & motives so Butler, Housekeeper, Gardener, and Chef each look equally plausible.
+    No single suspect is favored by the physical evidence or context.
+    """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
     victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
-    real_culprit = "Gardener"  # dataset/ground-truth; not used for API choice
+    real_culprit = "Unknown"  # Ground-truth not used in API mode; keep neutral
+
     timeline = [
         "8:00 PM – Dinner begins in the great hall.",
         "9:10 PM – Power flickers; staff move about to check fuse boxes.",
+        "10:15 PM – Brief commotion in the corridor outside the study.",
         "10:30 PM – A shout is heard near the study.",
         "10:45 PM – Lord Blackwood found dead; letter opener missing.",
     ]
+
+    # --- Balanced, interpretable clues (each can point to multiple suspects) ---
     clues = [
-        "Mud traces on the study carpet.",
-        "A torn piece of green fabric caught on the desk latch.",
-        "Smudged footprints leading from the conservatory.",
+        # Location/entry ambiguity
+        "A partial muddy shoe print below the study window (pattern too common to identify).",
+        "Smudged footprints between the conservatory and the study, indistinct in size.",
+        # Fabric/fiber not color-specific to any one role
+        "A torn scrap of dark fabric snagged on the study desk latch (matches staff uniforms in general).",
+        # Object traces that could implicate different people
+        "Faint wine scent on the study desk blotter (could be from serving nearby).",
+        "A dusting of flour on the study door handle (consistent with recent kitchen prep).",
+        "A small grass blade stuck to the study rug (could be tracked in from the grounds or potted plants).",
+        # Weapon context still consistent with multiple access paths
         "The letter opener's sheath is missing from the display.",
+        # Access ambiguity
+        "The master key ring was recorded as ‘checked out’ at 10:20 PM in the logbook (signature smudged).",
     ]
+
+    # --- Balanced context/motives (one plausible motive per suspect) ---
     context = [
-        "Gardener requested a pay raise last week and was denied.",
-        "Housekeeper manages the household keys.",
-        "Butler oversees wine service and guest movements.",
-        "Chef had a heated argument with the victim earlier about menu changes.",
+        # Butler
+        "Butler received a stern warning earlier about overspending on the wine cellar; reputation at stake.",
+        # Housekeeper
+        "Housekeeper was recently blamed for a missing ledger page and feared disciplinary action.",
+        # Gardener
+        "Gardener's request for new tools and a pay adjustment was postponed again this week.",
+        # Chef
+        "Chef clashed with the victim over last-minute menu changes that spoiled a signature dish.",
+        # Neutral relationships
+        "All four staff had routine access near the study during the evening due to the storm and service duties.",
     ]
+
     return CaseFacts(
         setting=setting,
         victim=victim,
