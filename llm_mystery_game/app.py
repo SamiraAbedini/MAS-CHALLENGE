@@ -119,7 +119,9 @@ st.divider()
 with st.form("play"):
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
-        rogue_role = st.selectbox("Rogue Agent role", facts.suspects, index=0)
+        rogue_choices = [s for s in facts.suspects if s != "Butler"]
+        rogue_role = st.selectbox("Rogue Agent role", rogue_choices, index=0)
+
     with c2:
         model_name = st.text_input("OpenAI model", value="gpt-4o-mini")
     with c3:
