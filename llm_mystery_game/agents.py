@@ -155,8 +155,8 @@ class LeadDetectiveAgent(BaseAgent):
 
         if difficulty == "easy":
             stance = (
-                "Give higher weight to the witness's detailed, direct testimony—even if some physical clues "
-                "are ambiguous. If the witness provides a clear, vivid account implicating a suspect, you may "
+                "Give higher weight to the witness's testimony."
+                "If the witness provides a clear, vivid account implicating a suspect, you may "
                 "prefer that suspect."
             )
         elif difficulty == "hard":
