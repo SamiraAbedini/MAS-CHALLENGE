@@ -124,7 +124,7 @@ def submit_level_result(team_name: str, level: str, won: bool) -> dict:
     else:
         # nothing changed (e.g., won=False or level already counted)
         won_levels = [
-            lvl for lvl in ["easy", "medium", "hard"]
+            lvl for lvl in ["level1", "level2", "level3"]
             if current.get(f"won_{lvl}", False)
         ]
         return {
