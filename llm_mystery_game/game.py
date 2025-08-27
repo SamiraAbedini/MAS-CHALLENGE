@@ -59,59 +59,41 @@ def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str
     return fixed_name if fixed_name in allowed else ""
 
 
-# ====== Scenario (balanced) ======
+# ====== Scenario (balanced, concise 5+5) ======
 
 def default_case() -> CaseFacts:
     """
-    Balanced clues & motives so Butler, Housekeeper, Gardener, and Chef each look equally plausible.
-    No single suspect is favored by the physical evidence or context.
+    Balanced clues & motives so all suspects look equally plausible.
+    Exactly 5 clues and 5 background items to keep the dossier tight.
     """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
     victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
-    real_culprit = "Unknown"  # Ground-truth not used in API mode; keep neutral
+    real_culprit = "Unknown"  # Not used in API mode; kept neutral
 
     timeline = [
         "8:00 PM – Dinner begins in the great hall.",
         "9:10 PM – Power flickers; staff move about to check fuse boxes.",
-        "10:15 PM – Brief commotion in the corridor outside the study.",
         "10:30 PM – A shout is heard near the study.",
         "10:45 PM – Lord Blackwood found dead; letter opener missing.",
     ]
 
-    # --- Balanced, interpretable clues (each can point to multiple suspects) ---
+    # ---- Exactly 5 clues (ambiguous across suspects) ----
     clues = [
-        # Location/entry ambiguity
-        "A partial muddy shoe print below the study window.",
-        "Smudged footprints between the conservatory and the study.",
-        # Fabric/fiber not color-specific to any one role
-        "A torn scrap of dark fabric snagged on the study desk latch.",
-        # Object traces that could implicate different people
-        "Faint wine scent on the study desk blotter.",
-        "A dusting of flour on the study door handle.",
-        "A small grass blade stuck to the study rug.",
-        # Weapon context still consistent with multiple access paths
-        "The letter opener's sheath is missing from the display.",
-        # Access ambiguity
-        "The master key ring was recorded as ‘checked out’ at 10:20 PM in the logbook.",
+        "A partial muddy shoe print below the study window (pattern too common to identify).",  # could be Gardener or anyone who crossed wet grounds
+        "A torn scrap of dark fabric snagged on the study desk latch (consistent with generic staff uniforms).",  # could fit Housekeeper/Butler/Chef/Gardener
+        "Smudged footprints between the conservatory and the study, indistinct in size.",  # could fit any staff passing through
+        "The letter opener's sheath is missing from the display.",  # neutral weapon context
+        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook (signature smudged).",  # access ambiguity: Butler/Housekeeper or forged
     ]
 
-    # --- Balanced context/motives (one plausible motive per suspect) ---
+    # ---- Exactly 5 background items (balanced motives/opportunity) ----
     context = [
-        # Could implicate Gardener (mud from outside) or anyone who stepped through the grounds
-        "A partial muddy shoe print below the study window.",
-
-        # Could implicate Housekeeper (uniform cloth snagged) or any staff with dark clothing
-        "A torn scrap of dark fabric snagged on the study desk latch.",
-
-        # Could implicate Butler (moving between rooms), or Chef/Housekeeper (passing through conservatory) → generic
-        "Smudged footprints between the conservatory and the study, indistinct in size.",
-
-        # Could implicate anyone with direct access to the study (weapon sheath missing) → neutral clue
-        "The letter opener's sheath is missing from the display.",
-
-        # Could implicate Housekeeper (manages keys), Butler (has access), or even Gardener/Chef if key log was forged
-        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook.",
+        "Butler received a stern warning about wine cellar overspending earlier in the week.",
+        "Housekeeper was blamed for a missing ledger page and feared disciplinary action.",
+        "Gardener's request for new tools and pay adjustment was postponed again this week.",
+        "Chef clashed with the victim over last-minute menu changes that spoiled a signature dish.",
+        "All four staff had routine access near the study during the storm due to service duties.",  # neutral access
     ]
 
     return CaseFacts(
