@@ -140,6 +140,8 @@ st.divider()
 
 # Use a form to avoid reruns on every keystroke
 with st.form("play"):
+    team_name = st.text_input("Your Team Name", placeholder="e.g., The Sleuth Squad")
+
     st.markdown(f"**Witness role:** {ROGUE_ROLE}")
     player_instruction = st.text_area(
         "Your instruction to the Housekeeper (they will speak in-character and may try to bias the case):",
@@ -151,6 +153,7 @@ with st.form("play"):
         height=160,
     )
     submitted = st.form_submit_button("Run Investigation", use_container_width=True)
+
 
 if not submitted:
     st.stop()
