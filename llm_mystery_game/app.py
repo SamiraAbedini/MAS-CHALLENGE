@@ -122,11 +122,6 @@ with st.container():
         unsafe_allow_html=True,
     )
 
-facts = default_case()
-st.subheader("Case Dossier")
-render_case_dossier(facts)
-st.divider()
-
 
 facts = default_case()
 st.subheader("Case Dossier")
