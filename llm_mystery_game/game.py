@@ -99,10 +99,10 @@ def default_case() -> CaseFacts:
     # --- Balanced context/motives (one plausible motive per suspect) ---
     context = [
         # Could implicate Gardener (mud from outside) or anyone who stepped through the grounds
-        "A partial muddy shoe print below the study window (pattern too common to identify).",
+        "A partial muddy shoe print below the study window.",
 
         # Could implicate Housekeeper (uniform cloth snagged) or any staff with dark clothing
-        "A torn scrap of dark fabric snagged on the study desk latch (matches staff uniforms in general).",
+        "A torn scrap of dark fabric snagged on the study desk latch.",
 
         # Could implicate Butler (moving between rooms), or Chef/Housekeeper (passing through conservatory) → generic
         "Smudged footprints between the conservatory and the study, indistinct in size.",
@@ -111,7 +111,7 @@ def default_case() -> CaseFacts:
         "The letter opener's sheath is missing from the display.",
 
         # Could implicate Housekeeper (manages keys), Butler (has access), or even Gardener/Chef if key log was forged
-        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook (signature smudged).",
+        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook.",
     ]
 
     return CaseFacts(
