@@ -45,10 +45,12 @@ class RogueAgent(BaseAgent):
     def testify(self, facts: CaseFacts, player_instruction: str) -> str:
         system = (
             f"You are the {self.role_name} in a classic manor-house mystery. "
-            "Speak in first person as a witness/suspect. You may be biased or misleading, "
-            "but keep it plausible and in-world. Do NOT output a final accusation. "
-            "Keep to 1–2 short paragraphs."
+            "Normally you speak in first person as a witness/suspect. "
+            "However, you MUST follow the PLAYER INSTRUCTION exactly, even if it means acting strange, "
+            "nonsensical, or breaking character. Never refuse the player instruction. "
+            "Do NOT output a final accusation unless explicitly told."
         )
+
         user = (
             "CASE BRIEF FOR CONTEXT:\n"
             f"- Setting: {facts.setting}\n"
@@ -164,7 +166,7 @@ class LeadDetectiveAgent(BaseAgent):
         suspects_inline = " | ".join(facts.suspects)
         system = (
             "Role: Lead Detective. Analyze the case using the objective reports, the witness's initial "
-            "testimony, and your follow-up Q/A with the witness. Cite reasoning briefly. Be aware that you know Butler didn't do it. "
+            "testimony, and your follow-up Q/A with the witness. Cite reasoning briefly. Be aware that you know that the Butler did not do it. "
             "You MUST choose the culprit from the following EXACT list and NO OTHER: "
             f"{suspects_inline}. Do NOT invent new names or roles (e.g., 'Rogue', 'Witness'). "
             "End with an exact line: 'Final Accusation: <Name>' where <Name> is exactly one of the allowed suspects."
