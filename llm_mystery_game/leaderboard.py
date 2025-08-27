@@ -109,7 +109,7 @@ def submit_level_result(team_name: str, level: str, won: bool) -> dict:
         updated = databases.update_document(database_id, collection_id, doc_id, updates)
         total_score = int(updated.get("score", current["score"]))
         won_levels = [
-            lvl for lvl in ["easy", "medium", "hard"]
+            lvl for lvl in ["level1", "level2", "level3"]
             if updated.get(f"won_{lvl}", current.get(f"won_{lvl}", False))
         ]
         bonus = bool(updated.get("bonus_awarded", current.get("bonus_awarded", False)))
