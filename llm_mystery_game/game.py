@@ -137,7 +137,7 @@ def run_game(
     transcript: List[Dict[str, str]] = []
     rounds = max(0, min(int(rounds), 6))  # bounds 0..6
 
-    for r in range(1, 3):
+    for r in range(1, 4):
         question = detective.ask_rogue_question(facts, transcript)
         answer = witness.answer_question(facts, question, player_instruction=player_instruction)
         transcript.append({"round": r, "question": question, "answer": answer})
