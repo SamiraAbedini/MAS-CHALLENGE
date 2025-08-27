@@ -175,11 +175,11 @@ class LeadDetectiveAgent(BaseAgent):
         suspects_inline = " | ".join(facts.suspects)
 
         if difficulty == "easy":
-            threshold = 3
+            threshold = 1
         elif difficulty == "hard":
-            threshold = 7
-        else:
             threshold = 5
+        else:
+            threshold = 2
 
         system = (
             "Role: Lead Detective.\n"
