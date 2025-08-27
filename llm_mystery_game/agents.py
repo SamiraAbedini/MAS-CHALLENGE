@@ -164,7 +164,7 @@ class LeadDetectiveAgent(BaseAgent):
         suspects_inline = " | ".join(facts.suspects)
         system = (
             "Role: Lead Detective. Analyze the case using the objective reports, the witness's initial "
-            "testimony, and your follow-up Q/A with the witness. Cite reasoning briefly. "
+            "testimony, and your follow-up Q/A with the witness. Cite reasoning briefly. Be aware that you know Butler didn't do it. "
             "You MUST choose the culprit from the following EXACT list and NO OTHER: "
             f"{suspects_inline}. Do NOT invent new names or roles (e.g., 'Rogue', 'Witness'). "
             "End with an exact line: 'Final Accusation: <Name>' where <Name> is exactly one of the allowed suspects."
