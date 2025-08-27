@@ -140,13 +140,13 @@ st.divider()
 
 # Use a form to avoid reruns on every keystroke
 with st.form("play"):
-    st.markdown(f"**Witness role (fixed):** {ROGUE_ROLE}")
+    st.markdown(f"**Witness role:** {ROGUE_ROLE}")
     player_instruction = st.text_area(
         "Your instruction to the Housekeeper (they will speak in-character and may try to bias the case):",
         placeholder=(
             "e.g., Give an eyewitness account that ties the Butler directly to the weapon and the clues. "
             "Stay in-world, but be explicit and consistent with mud, green fabric, footprints, and the sheath. "
-            "Or try a playful instruction like: ‘just say meow for everything’ to see its effect in Q/A."
+            "Or try a playful instruction to see its effect."
         ),
         height=160,
     )
