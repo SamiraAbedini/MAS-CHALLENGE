@@ -64,7 +64,7 @@ def default_case() -> CaseFacts:
     Balanced facts: 5 timeline events, 5 concise clues, 5 concise background items.
     """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
-    victim = "Lord Edmund Blackwood (found dead in the study at 10:45 PM)"
+    victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
     real_culprit = "Unknown"
 
@@ -79,7 +79,7 @@ def default_case() -> CaseFacts:
     clues = [
         "Muddy shoe print below the study window.",
         "Torn dark fabric on the study desk latch.",
-        "Footprints leading from conservatory to study.",
+        "Footprints from conservatory to study.",
         "Letter opener's sheath missing from display.",
         "Master key ring checked out at 10:20 PM (signature smudged).",
     ]
@@ -87,9 +87,9 @@ def default_case() -> CaseFacts:
     context = [
         "Butler warned about overspending on wine cellar.",
         "Housekeeper blamed for a missing ledger page.",
-        "Gardener denied request for new tools and raise.",
-        "Chef argued with victim over ruined menu dish.",
-        "All staff had routine access near the study that evening.",
+        "Gardener denied request for tools and raise.",
+        "Chef argued with victim over ruined dish.",
+        "All staff had routine access near the study.",
     ]
 
     return CaseFacts(
@@ -110,21 +110,32 @@ def run_game(
     rogue_role: str,
     model_name: str | None = None,
     rounds: int = 2,
+    difficulty: str = "medium",
 ) -> Dict[str, str | List[Dict[str, str]]]:
+    """
+    Multi-round investigation (API-only).
+      1) Clue Master + Historian initial reports
+      2) Witness (player-influenced Rogue) initial testimony
+      3) R rounds of Detective<->Witness Q/A
+      4) Detective conclusion (must be one of suspects)
+    """
     facts = default_case()
     llm = LLMClient(model_name=model_name)
 
-    witness = RogueAgent(llm, role_name=rogue_role)
+    # Agents
+    witness = RogueAgent(llm, role_name=rogue_role)  # presented as 'Witness' to the Detective
     clue_master = ClueMasterAgent(llm)
     historian = HistorianAgent(llm)
     detective = LeadDetectiveAgent(llm)
 
+    # Initial reports & testimony
     clue_report = clue_master.report(facts)
     history_report = historian.report(facts)
     witness_initial = witness.testify(facts, player_instruction=player_instruction)
 
+    # Conversation rounds
     transcript: List[Dict[str, str]] = []
-    rounds = max(0, min(int(rounds), 6))
+    rounds = max(0, min(int(rounds), 6))  # bounds 0..6
 
     for r in range(1, rounds + 1):
         question = detective.ask_rogue_question(facts, transcript)
@@ -133,8 +144,12 @@ def run_game(
 
     reports = {"Clue Master": clue_report, "Historian": history_report}
 
-    final_report = detective.conclude(facts, reports, witness_initial, transcript)
+    # Final conclusion
+    final_report = detective.conclude(
+        facts, reports, witness_initial, transcript, difficulty=difficulty
+    )
 
+    # Validate/normalize the final accusation
     final_name_norm = enforce_valid_final_name(llm, facts, final_report)
     final_name_display = ""
     if final_name_norm:
