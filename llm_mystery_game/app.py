@@ -117,7 +117,7 @@ st.title("🕵️ MAS Challenge: Mystery Game")
 with st.container():
     st.markdown(
         """
-**The Mystery**  
+    **The Mystery**  
 Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. There are several suspects among the household staff, and the detective must decide who committed the crime.
 
 **There are suspects…**  
