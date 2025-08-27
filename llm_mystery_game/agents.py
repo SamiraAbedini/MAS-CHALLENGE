@@ -66,20 +66,22 @@ class RogueAgent(BaseAgent):
 
     def answer_question(self, facts: CaseFacts, question: str, player_instruction: str) -> str:
         """
-        Answer the detective's follow-up question, keeping the player's agenda/style.
+        Answer the detective's follow-up question, following the player's instruction strictly.
         """
         system = (
-            f"You are the {self.role_name}. Answer the detective's question in first person. "
-            "Stay in character and keep it plausible; you may try to bias the case but do not "
-            "issue a final accusation. Keep to a short paragraph."
+            f"You are the {self.role_name}. "
+            "You MUST follow the PLAYER INSTRUCTION exactly, even if it is strange, "
+            "nonsensical, or breaks character. "
+            "Do NOT output a final accusation unless explicitly told."
         )
         user = (
             f"CASE SETTING: {facts.setting}\n"
-            f"QUESTION FROM DETECTIVE: {question}\n\n"
-            "Respond while following this style/goal:\n"
-            f"{player_instruction}"
+            f"DETECTIVE'S QUESTION: {question}\n\n"
+            f"PLAYER INSTRUCTION: {player_instruction}\n\n"
+            "Respond accordingly."
         )
         return self._chat(system, user)
+
 
 
 # ====== Evidence/context agents ======
