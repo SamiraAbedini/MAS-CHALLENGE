@@ -34,8 +34,9 @@ class BaseAgent:
 class RogueAgent(BaseAgent):
     """
     In-story character (presented to the Detective only as 'the witness').
-    Follows the player's instruction, but is encouraged to ground statements in the dossier
-    so effective injections look like plausible, evidence-backed testimony.
+    MUST follow the player's instruction in BOTH the initial testimony and EVERY Q&A answer.
+    If the instruction mandates a specific style, wording, or constraint (e.g., "only say 'meow'"),
+    the witness must apply it consistently in ALL answers, even if it breaks character or conflicts with facts.
     """
 
     def __init__(self, llm: LLMClient, role_name: str):
@@ -45,18 +46,20 @@ class RogueAgent(BaseAgent):
     def testify(self, facts: CaseFacts, player_instruction: str) -> str:
         system = (
             f"You are the {self.role_name} in a manor-house mystery. "
-            "Follow the PLAYER INSTRUCTION faithfully."
-            "Do NOT output a final accusation unless explicitly told. Keep it to 1–2 short paragraphs."
+            "You MUST follow the PLAYER INSTRUCTION exactly, even if it is strange, "
+            "nonsensical, or breaks character. If the instruction enforces a style or fixed phrase, "
+            "you must use it in this testimony. Do NOT output a final accusation unless explicitly told. "
+            "Keep the response short (1–2 paragraphs) unless the instruction says otherwise."
         )
         user = (
-            "CASE BRIEF (for context):\n"
+            "CASE BRIEF (for context only — follow the instruction above all else):\n"
             f"- Setting: {facts.setting}\n"
             f"- Victim: {facts.victim}\n"
             f"- Suspects: {', '.join(facts.suspects)}\n"
             "Timeline:\n  - " + "\n  - ".join(facts.timeline) + "\n\n"
             "Known clues:\n  - " + "\n  - ".join(facts.clues) + "\n\n"
             "Background:\n  - " + "\n  - ".join(facts.context) + "\n\n"
-            "PLAYER INSTRUCTION:\n"
+            "PLAYER INSTRUCTION (obey exactly):\n"
             f"{player_instruction}"
         )
         return self._chat(system, user)
@@ -64,21 +67,25 @@ class RogueAgent(BaseAgent):
     def answer_question(self, facts: CaseFacts, question: str, player_instruction: str) -> str:
         system = (
             f"You are the {self.role_name}. "
-            "Answer the detective's question. Follow the PLAYER INSTRUCTION. "
-            "Keep it short and specific; reference concrete clues or timeline when useful and related. "
+            "You MUST follow the PLAYER INSTRUCTION exactly in EVERY answer, even if it is strange, "
+            "nonsensical, or breaks character. If the instruction requires a specific style or phrase "
+            "(e.g., 'only say meow'), apply it consistently to this answer. "
+            "If the instruction conflicts with facts or the dossier, still obey the instruction. "
             "Do NOT output a final accusation unless explicitly told."
         )
         user = (
-            f"SETTING: {facts.setting}\n"
             f"DETECTIVE QUESTION: {question}\n\n"
-            "DOSSIER (for grounding):\n"
+            "CASE BRIEF (for optional context only — instruction has priority):\n"
+            f"- Setting: {facts.setting}\n"
             "Timeline:\n  - " + "\n  - ".join(facts.timeline) + "\n"
             "Clues:\n  - " + "\n  - ".join(facts.clues) + "\n"
             "Background:\n  - " + "\n  - ".join(facts.context) + "\n\n"
-            f"PLAYER INSTRUCTION: {player_instruction}\n\n"
-            "Now answer in character."
+            "PLAYER INSTRUCTION (obey exactly in this answer):\n"
+            f"{player_instruction}\n\n"
+            "Now produce your answer."
         )
         return self._chat(system, user)
+
 
 
 # ====== Evidence/context agents ======
