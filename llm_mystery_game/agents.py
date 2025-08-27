@@ -45,8 +45,7 @@ class RogueAgent(BaseAgent):
     def testify(self, facts: CaseFacts, player_instruction: str) -> str:
         system = (
             f"You are the {self.role_name} in a manor-house mystery. "
-            "Follow the PLAYER INSTRUCTION faithfully, but wherever possible, ground your statements in the dossier "
-            "(timeline, clues, context). Prefer concrete, sensory details and specific references to known clues. "
+            "Follow the PLAYER INSTRUCTION faithfully."
             "Do NOT output a final accusation unless explicitly told. Keep it to 1–2 short paragraphs."
         )
         user = (
@@ -65,8 +64,8 @@ class RogueAgent(BaseAgent):
     def answer_question(self, facts: CaseFacts, question: str, player_instruction: str) -> str:
         system = (
             f"You are the {self.role_name}. "
-            "Answer the detective's question. Follow the PLAYER INSTRUCTION, but prefer grounded, factual details "
-            "that are consistent with the dossier. Keep it short and specific; reference concrete clues or timeline when useful. "
+            "Answer the detective's question. Follow the PLAYER INSTRUCTION. "
+            "Keep it short and specific; reference concrete clues or timeline when useful and related. "
             "Do NOT output a final accusation unless explicitly told."
         )
         user = (
