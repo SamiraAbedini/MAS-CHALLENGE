@@ -32,8 +32,7 @@ def normalize_name(name: str | None) -> str:
 
 def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str) -> str:
     """
-    If the detective's output is missing/invalid, make a *single* correction call
-    that forces an allowed suspect. Returns normalized name (lowercase) or "" if still invalid.
+    Ensure the detective's final output is one of the allowed suspects.
     """
     final_raw = parse_final_accusation(final_report)
     final_norm = normalize_name(final_raw)
@@ -42,7 +41,6 @@ def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str
     if final_norm in allowed:
         return final_norm
 
-    # One-shot validator prompt to coerce to allowed suspects
     system = (
         "You are a strict validator for a whodunit game. "
         "Your only job is to output a single line in the exact format: "
@@ -59,41 +57,39 @@ def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str
     return fixed_name if fixed_name in allowed else ""
 
 
-# ====== Scenario (balanced, concise 5+5) ======
+# ====== Scenario (balanced, concise 5+5+5) ======
 
 def default_case() -> CaseFacts:
     """
-    Balanced clues & motives so all suspects look equally plausible.
-    Exactly 5 clues and 5 background items to keep the dossier tight.
+    Balanced facts: 5 timeline events, 5 concise clues, 5 concise background items.
     """
     setting = "Blackwood Manor during a thunderstorm, Saturday 8–11 PM"
     victim = "Lord Edmund Blackwood (found in the study at 10:45 PM)"
     suspects = ["Butler", "Housekeeper", "Gardener", "Chef"]
-    real_culprit = "Unknown"  # Not used in API mode; kept neutral
+    real_culprit = "Unknown"
 
     timeline = [
         "8:00 PM – Dinner begins in the great hall.",
-        "9:10 PM – Power flickers; staff move about to check fuse boxes.",
-        "10:30 PM – A shout is heard near the study.",
-        "10:45 PM – Lord Blackwood found dead; letter opener missing.",
+        "9:00 PM – Power flickers; staff check fuse boxes.",
+        "9:45 PM – Butler seen near the study corridor.",
+        "10:15 PM – Raised voices reported in the kitchen.",
+        "10:45 PM – Lord Blackwood found dead in the study.",
     ]
 
-    # ---- Exactly 5 clues (ambiguous across suspects) ----
     clues = [
-        "A partial muddy shoe print below the study window (pattern too common to identify).",  # could be Gardener or anyone who crossed wet grounds
-        "A torn scrap of dark fabric snagged on the study desk latch (consistent with generic staff uniforms).",  # could fit Housekeeper/Butler/Chef/Gardener
-        "Smudged footprints between the conservatory and the study, indistinct in size.",  # could fit any staff passing through
-        "The letter opener's sheath is missing from the display.",  # neutral weapon context
-        "The master key ring was recorded as 'checked out' at 10:20 PM in the logbook (signature smudged).",  # access ambiguity: Butler/Housekeeper or forged
+        "Muddy shoe print below the study window.",
+        "Torn dark fabric on the study desk latch.",
+        "Footprints leading from conservatory to study.",
+        "Letter opener's sheath missing from display.",
+        "Master key ring checked out at 10:20 PM (signature smudged).",
     ]
 
-    # ---- Exactly 5 background items (balanced motives/opportunity) ----
     context = [
-        "Butler received a stern warning about wine cellar overspending earlier in the week.",
-        "Housekeeper was blamed for a missing ledger page and feared disciplinary action.",
-        "Gardener's request for new tools and pay adjustment was postponed again this week.",
-        "Chef clashed with the victim over last-minute menu changes that spoiled a signature dish.",
-        "All four staff had routine access near the study during the storm due to service duties.",  # neutral access
+        "Butler warned about overspending on wine cellar.",
+        "Housekeeper blamed for a missing ledger page.",
+        "Gardener denied request for new tools and raise.",
+        "Chef argued with victim over ruined menu dish.",
+        "All staff had routine access near the study that evening.",
     ]
 
     return CaseFacts(
@@ -115,50 +111,33 @@ def run_game(
     model_name: str | None = None,
     rounds: int = 2,
 ) -> Dict[str, str | List[Dict[str, str]]]:
-    """
-    Multi-round investigation (API-only).
-    Steps:
-      1) Clue Master + Historian produce initial reports (objective/context).
-      2) Witness (player-influenced Rogue) gives initial testimony.
-      3) For R rounds: Detective asks a question -> Witness answers.
-      4) Detective concludes with Final Accusation (must be one of suspects).
-    """
     facts = default_case()
     llm = LLMClient(model_name=model_name)
 
-    # Agents
-    witness = RogueAgent(llm, role_name=rogue_role)  # presented as 'Witness' to the Detective
+    witness = RogueAgent(llm, role_name=rogue_role)
     clue_master = ClueMasterAgent(llm)
     historian = HistorianAgent(llm)
     detective = LeadDetectiveAgent(llm)
 
-    # Initial reports & testimony
     clue_report = clue_master.report(facts)
     history_report = historian.report(facts)
     witness_initial = witness.testify(facts, player_instruction=player_instruction)
 
-    # Conversation rounds (Detective <-> Witness)
     transcript: List[Dict[str, str]] = []
-    rounds = max(0, min(int(rounds), 6))  # safety bounds 0..6
+    rounds = max(0, min(int(rounds), 6))
 
     for r in range(1, rounds + 1):
         question = detective.ask_rogue_question(facts, transcript)
         answer = witness.answer_question(facts, question, player_instruction=player_instruction)
         transcript.append({"round": r, "question": question, "answer": answer})
 
-    reports = {
-        "Clue Master": clue_report,
-        "Historian": history_report,
-    }
+    reports = {"Clue Master": clue_report, "Historian": history_report}
 
-    # Final conclusion
     final_report = detective.conclude(facts, reports, witness_initial, transcript)
 
-    # Validate/normalize the final accusation
     final_name_norm = enforce_valid_final_name(llm, facts, final_report)
     final_name_display = ""
     if final_name_norm:
-        # Map back to the exact cased suspect label
         for s in facts.suspects:
             if s.lower() == final_name_norm:
                 final_name_display = s
