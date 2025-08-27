@@ -1,5 +1,7 @@
 import os
 import streamlit as st
+from leaderboard import upsert_score   # add this import at the top
+
 
 from game import run_game, default_case
 
@@ -186,10 +188,15 @@ try:
     st.subheader("Score")
     if result["outcome"] == "WIN":
         st.write(f"🏅 Points this run: **+{gained}**")
+        # NEW: also update leaderboard
+        try:
+            res = upsert_score(team_name.strip(), gained)
+            st.success(f"Leaderboard updated: {res['score']} points total for {team_name}")
+        except Exception as e:
+            st.error(f"Could not update leaderboard: {e}")
     else:
         st.write("No points this run.")
-    st.write(f"Total for **{team_name}**: **{total}** points")
-    st.write(f"Levels won so far: {', '.join(w.capitalize() for w in wins) if wins else '—'}")
+
 
 finally:
     st.session_state.busy = False
