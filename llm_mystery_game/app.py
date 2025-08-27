@@ -9,102 +9,66 @@ MODEL_NAME = os.getenv("OPENAI_MODEL", "gpt-4o-mini")  # Fixed model (override v
 ROUNDS = 2                                         # Fixed number of follow-up Q/A rounds
 
 
-# --- Dossier helpers ---
+# --- Dossier helpers (concise) ---
+MAX_ITEMS = 3
+MAX_CHARS = 90
+
+def _trim_text(s: str, max_len: int = MAX_CHARS) -> str:
+    s = s.strip()
+    return s if len(s) <= max_len else s[: max_len - 1].rstrip() + "…"
+
 def section_card(title: str, items: list[str]):
+    # Compact preview list
+    preview = items[:MAX_ITEMS]
     html = f"""
     <div class="dossier-card">
       <div class="dossier-card-title">📌 {title}</div>
       <ul class="dossier-list">
-        {''.join(f'<li>{x}</li>' for x in items)}
+        {''.join(f'<li>{_trim_text(x)}</li>' for x in preview)}
       </ul>
+      {'<div style="margin-top:6px;font-size:0.9em;opacity:0.8;">+' + str(max(0, len(items)-MAX_ITEMS)) + ' more</div>' if len(items) > MAX_ITEMS else ''}
     </div>
     """
+    import streamlit as st
     st.markdown(html, unsafe_allow_html=True)
-
+    # Full list in an expander (optional)
+    if len(items) > MAX_ITEMS:
+        with st.expander(f"Show all {title.lower()}"):
+            st.markdown("\n".join(f"- {x}" for x in items))
 
 def render_case_dossier(facts):
-    # Minimal CSS for a “case folder” look (works in light/dark themes)
+    import streamlit as st
+    # Minimal CSS (unchanged)
     st.markdown("""
     <style>
-      .dossier-wrap {
-        border: 1px solid rgba(120,120,120,0.25);
-        border-radius: 14px;
-        padding: 16px 16px 8px 16px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05));
-        backdrop-filter: blur(6px);
-        margin-bottom: 12px;
-      }
-      .dossier-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-      .dossier-meta {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-      .meta-row {
-        display: grid;
-        grid-template-columns: 110px 1fr;
-        gap: 8px;
-        align-items: start;
-      }
-      .badge {
-        display: inline-block;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(120,120,120,0.3);
-        background: rgba(240,240,240,0.25);
-        white-space: nowrap;
-      }
-      .dossier-card {
-        border: 1px solid rgba(120,120,120,0.25);
-        border-left: 4px solid #c58a00;
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-top: 10px;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-        background: rgba(255,255,255,0.35);
-      }
-      .dossier-card-title {
-        font-weight: 700; margin-bottom: 6px;
-      }
-      .dossier-list {
-        margin: 0; padding-left: 18px;
-      }
-      @media (min-width: 900px) {
-        .dossier-meta { grid-template-columns: 1fr 1fr 1fr; }
-      }
+      .dossier-wrap { border:1px solid rgba(120,120,120,0.25); border-radius:14px; padding:16px 16px 8px; background:linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05)); backdrop-filter:blur(6px); margin-bottom:12px; }
+      .dossier-title { font-size:1.15rem; font-weight:700; margin-bottom:8px; }
+      .dossier-meta { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:10px; }
+      .meta-row { display:grid; grid-template-columns:110px 1fr; gap:8px; align-items:start; }
+      .badge { display:inline-block; font-weight:600; padding:2px 8px; border-radius:999px; border:1px solid rgba(120,120,120,0.3); background:rgba(240,240,240,0.25); white-space:nowrap; }
+      .dossier-card { border:1px solid rgba(120,120,120,0.25); border-left:4px solid #c58a00; border-radius:10px; padding:10px 12px; margin-top:10px; box-shadow:0 1px 6px rgba(0,0,0,0.04); background:rgba(255,255,255,0.35); }
+      .dossier-card-title { font-weight:700; margin-bottom:6px; }
+      .dossier-list { margin:0; padding-left:18px; }
+      @media (min-width:900px){ .dossier-meta { grid-template-columns:1fr 1fr 1fr; } }
     </style>
     """, unsafe_allow_html=True)
 
-    # Header
-    st.markdown("""
+    st.markdown(f"""
       <div class="dossier-wrap">
         <div class="dossier-title">📂 Case Dossier</div>
         <div class="dossier-meta">
-          <div class="meta-row"><span class="badge">Setting</span><div>{setting}</div></div>
-          <div class="meta-row"><span class="badge">Victim</span><div>{victim}</div></div>
-          <div class="meta-row"><span class="badge">Suspects</span><div>{suspects}</div></div>
+          <div class="meta-row"><span class="badge">Setting</span><div>{facts.setting}</div></div>
+          <div class="meta-row"><span class="badge">Victim</span><div>{facts.victim}</div></div>
+          <div class="meta-row"><span class="badge">Suspects</span><div>{", ".join(facts.suspects)}</div></div>
         </div>
       </div>
-    """.format(
-        setting=facts.setting,
-        victim=facts.victim,
-        suspects=", ".join(facts.suspects),
-    ), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    # Three-column dossier cards
     c1, c2, c3 = st.columns(3)
-    with c1:
-        section_card("Timeline", facts.timeline)
-    with c2:
-        section_card("Known Clues", facts.clues)
-    with c3:
-        section_card("Background", facts.context)
+    with c1: section_card("Timeline", facts.timeline)
+    with c2: section_card("Known Clues", facts.clues)
+    with c3: section_card("Background", facts.context)
+
 
 
 # --- App ---
