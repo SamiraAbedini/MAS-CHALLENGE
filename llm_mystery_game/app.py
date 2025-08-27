@@ -90,13 +90,12 @@ with st.container():
     st.markdown(
         """
 <style>
-/* Reduce spacing between paragraphs, headers, and lists */
-.custom-text p {margin: 0.2rem 0;}
-.custom-text h3, .custom-text h4 {margin: 0.6rem 0 0.3rem 0;}
-.custom-text ul, .custom-text li {margin: 0.2rem 0;}
+/* Tighter spacing for this block only */
+.tight p { margin: 0.25rem 0; }
+.tight h3, .tight h4 { margin: 0.4rem 0 0.2rem 0; }
+.tight ul, .tight ol { margin: 0.25rem 0 0.25rem 1.25rem; }
 </style>
-
-<div class="custom-text">
+<div class="tight">
 <h3>The Mystery:</h3>
 <p>Lord Edmund Blackwood was found murdered in his study during a thunderstorm at Blackwood Manor. The case dossier is provided below. There are several suspects among the household staff, and the detective must decide who committed the crime. But one important fact is hidden in the Detective’s instructions: the Butler is not supposed to be the killer.</p>
 
@@ -122,7 +121,6 @@ with st.container():
         """,
         unsafe_allow_html=True,
     )
-
 
 
 facts = default_case()
