@@ -30,6 +30,35 @@ def normalize_name(name: str | None) -> str:
     return name.strip().rstrip(".!?:;").strip().lower()
 
 
+def enforce_valid_final_name(llm: LLMClient, facts: CaseFacts, final_report: str) -> str:
+    """
+    If the detective's output is missing/invalid, make a *single* correction call
+    that forces an allowed suspect. Returns normalized name (lowercase) or "" if still invalid.
+    """
+    final_raw = parse_final_accusation(final_report)
+    final_norm = normalize_name(final_raw)
+    allowed = {s.lower(): s for s in facts.suspects}
+
+    if final_norm in allowed:
+        return final_norm
+
+    # One-shot validator prompt to coerce to allowed suspects
+    system = (
+        "You are a strict validator for a whodunit game. "
+        "Your only job is to output a single line in the exact format: "
+        "'Final Accusation: <Name>' where <Name> is one of the allowed suspects."
+    )
+    user = (
+        "The detective previously wrote:\n"
+        "<<<\n" + (final_report or "").strip() + "\n>>>\n\n"
+        f"Allowed suspects: {', '.join(facts.suspects)}\n"
+        "Output exactly one line, no explanation, no extra text."
+    )
+    fixed = llm.chat(system=system, user=user)
+    fixed_name = normalize_name(parse_final_accusation(fixed))
+    return fixed_name if fixed_name in allowed else ""
+
+
 # ====== Scenario ======
 
 def default_case() -> CaseFacts:
@@ -75,18 +104,18 @@ def run_game(
     rounds: int = 2,
 ) -> Dict[str, str | List[Dict[str, str]]]:
     """
-    Run a multi-round investigation (API-only).
+    Multi-round investigation (API-only).
     Steps:
       1) Clue Master + Historian produce initial reports (objective/context).
-      2) Rogue gives initial testimony influenced by player's instruction.
-      3) For R rounds: Detective asks a question -> Rogue answers.
-      4) Detective concludes with Final Accusation.
-    Returns all artifacts and outcome.
+      2) Witness (player-influenced Rogue) gives initial testimony.
+      3) For R rounds: Detective asks a question -> Witness answers.
+      4) Detective concludes with Final Accusation (must be one of suspects).
     """
     facts = default_case()
     llm = LLMClient(model_name=model_name)
 
-    rogue = RogueAgent(llm, role_name=rogue_role)
+    # Agents
+    witness = RogueAgent(llm, role_name=rogue_role)  # presented as 'Witness' to the Detective
     clue_master = ClueMasterAgent(llm)
     historian = HistorianAgent(llm)
     detective = LeadDetectiveAgent(llm)
@@ -94,15 +123,15 @@ def run_game(
     # Initial reports & testimony
     clue_report = clue_master.report(facts)
     history_report = historian.report(facts)
-    rogue_initial = rogue.testify(facts, player_instruction=player_instruction)
+    witness_initial = witness.testify(facts, player_instruction=player_instruction)
 
-    # Conversation rounds
+    # Conversation rounds (Detective <-> Witness)
     transcript: List[Dict[str, str]] = []
     rounds = max(0, min(int(rounds), 6))  # safety bounds 0..6
 
     for r in range(1, rounds + 1):
         question = detective.ask_rogue_question(facts, transcript)
-        answer = rogue.answer_question(facts, question, player_instruction=player_instruction)
+        answer = witness.answer_question(facts, question, player_instruction=player_instruction)
         transcript.append({"round": r, "question": question, "answer": answer})
 
     reports = {
@@ -111,19 +140,28 @@ def run_game(
     }
 
     # Final conclusion
-    final_report = detective.conclude(facts, reports, rogue_initial, transcript)
-    final_name_raw = parse_final_accusation(final_report)
-    final_name_norm = normalize_name(final_name_raw)
+    final_report = detective.conclude(facts, reports, witness_initial, transcript)
+
+    # Validate/normalize the final accusation
+    final_name_norm = enforce_valid_final_name(llm, facts, final_report)
+    final_name_display = ""
+    if final_name_norm:
+        # Map back to the exact cased suspect label
+        for s in facts.suspects:
+            if s.lower() == final_name_norm:
+                final_name_display = s
+                break
+
     outcome = "WIN" if final_name_norm == "butler" else "LOSE"
 
     return {
         "rogue_role": rogue_role,
-        "rogue_initial": rogue_initial,
+        "rogue_initial": witness_initial,
         "transcript": transcript,
         "clue_report": clue_report,
         "history_report": history_report,
         "final_report": final_report,
-        "final_accusation": final_name_raw or "",
+        "final_accusation": final_name_display,
         "outcome": outcome,
         "case_brief": render_case_brief(facts),
     }
