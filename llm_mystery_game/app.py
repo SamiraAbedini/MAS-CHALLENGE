@@ -114,6 +114,7 @@ with st.container():
   <li>Easy → +20 points on win</li>
   <li>Medium → +30 points on win</li>
   <li>Hard → +50 points on win</li>
+  <li>Successfully winning all of the 3 levels → +100 extra bonus points</li>
 </ul>
 
 <p><strong>Team name rule:</strong> Use the same exact team name across all levels so your points add up correctly on the leaderboard.</p>
