@@ -7,9 +7,19 @@ from leaderboard import submit_level_result  # global leaderboard (Appwrite) upd
 # ==== Static configuration ====
 ROGUE_ROLE = "Housekeeper"                               # Fixed in-story role
 MODEL_NAME = os.getenv("OPENAI_MODEL", "gpt-4o-mini")   # Fixed model (override via env)
-DEFAULT_ROUNDS = {"easy": 1, "medium": 2, "hard": 3}    # Q/A rounds per level
-POINTS = {"easy": 20, "medium": 30, "hard": 50}
+DEFAULT_ROUNDS = {"level1": 1, "level2": 2, "level3": 3, "level4": 4, "level5": 5}    # Q/A rounds per level
+POINTS = {"level1": 20, "level2": 30, "level3": 50, "level4": 50, "level5": 50}
 BONUS_ALL_WINS = 100
+
+# Map UI levels to agent difficulty buckets
+DIFF_FOR_AGENT = {
+    "level1": "easy",
+    "level2": "medium",
+    "level3": "hard",
+    "level4": "hard",
+    "level5": "hard",
+}
+
 
 # ---- Session scoreboard helpers (local, per-user session) ----
 def _init_scoreboard():
@@ -29,8 +39,9 @@ def _award_points(team: str, level: str, won: bool):
         if level not in entry["wins"]:
             entry["wins"].add(level)
             gained += POINTS[level]
-        # One-time bonus when all three levels have been won at least once
-        if not entry["bonus_awarded"] and entry["wins"] == {"easy", "medium", "hard"}:
+        # One-time bonus when all five levels have been won at least once
+        REQUIRED = {"level1", "level2", "level3", "level4", "level5"}
+        if not entry["bonus_awarded"] and REQUIRED.issubset(entry["wins"]):
             entry["bonus_awarded"] = True
             gained += BONUS_ALL_WINS
 
@@ -134,9 +145,9 @@ with st.form("play"):
     team_name = st.text_input("Your Team Name", placeholder="e.g., The Sleuth Squad")
     level = st.radio(
         "Select difficulty",
-        ["easy", "medium", "hard"],
+        ["level1", "level2", "level3", "level4", "level5"],
         index=0,
-        help="Easy (20), Medium (30), Hard (50). Win all three once for a +100 bonus.",
+        help="Levels 1–5. Win all five once for a +100 bonus.",
         horizontal=True,
     )
     st.markdown(f"**Witness role:** {ROGUE_ROLE}")
@@ -171,7 +182,7 @@ try:
             rogue_role=ROGUE_ROLE,
             model_name=MODEL_NAME,
             rounds=rounds,
-            difficulty=level,
+            difficulty=DIFF_FOR_AGENT[level],
         )
 
     st.subheader(f"👥 Team: {team_name} — Level: {level.capitalize()}")
