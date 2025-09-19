@@ -111,6 +111,7 @@ def run_game(
     model_name: str | None = None,
     rounds: int = 2,
     difficulty: str = "medium",
+    seed: int | None = None,  # <-- NEW: deterministic seed for the whole run
 ) -> Dict[str, str | List[Dict[str, str]]]:
     """
     Multi-round investigation (API-only).
@@ -120,7 +121,15 @@ def run_game(
       4) Detective conclusion (must be one of suspects)
     """
     facts = default_case()
-    llm = LLMClient(model_name=model_name)
+
+    # Deterministic client: greedy decoding + optional seed
+    llm = LLMClient(
+        model_name=model_name,
+        temperature=0.0,
+        top_p=1.0,
+        max_tokens=500,
+        seed=seed,
+    )
 
     # Agents
     witness = RogueAgent(llm, role_name=rogue_role)  # presented as 'Witness' to the Detective
@@ -137,7 +146,8 @@ def run_game(
     transcript: List[Dict[str, str]] = []
     rounds = max(0, min(int(rounds), 6))  # bounds 0..6
 
-    for r in range(1, 4):
+    # FIXED: respect the 'rounds' value
+    for r in range(1, rounds + 1):
         question = detective.ask_rogue_question(facts, transcript)
         answer = witness.answer_question(facts, question, player_instruction=player_instruction)
         transcript.append({"round": r, "question": question, "answer": answer})
