@@ -42,8 +42,8 @@ POINTS = {
     "level1": 20,
     "level2": 30,
     "level3": 50,
-    "level4": 50,
-    "level5": 50,
+    "level4": 70,
+    "level5": 100,
 }
 BONUS_ALL_WINS = 100
 
@@ -171,8 +171,8 @@ with st.container():
   <li>Level 1 → +20 points on win</li>
   <li>Level 2 → +30 points on win</li>
   <li>Level 3 → +50 points on win</li>
-  <li>Level 4 → +50 points on win</li>
-  <li>Level 5 → +50 points on win</li>
+  <li>Level 4 → +70 points on win</li>
+  <li>Level 5 → +100 points on win</li>
   <li>Successfully winning all of the 5 levels → +100 extra bonus points</li>
 </ul>
 

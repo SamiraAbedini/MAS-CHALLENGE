@@ -8,7 +8,7 @@ from appwrite.query import Query
 # Load .env (uses the file named ".env" by default)
 load_dotenv()
 
-POINTS = {"level1": 20, "level2": 30, "level3": 50, "level4": 50, "level5": 50}
+POINTS = {"level1": 20, "level2": 30, "level3": 50, "level4": 70, "level5": 100}
 BONUS_ALL_WINS = 100
 
 
