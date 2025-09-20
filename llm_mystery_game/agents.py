@@ -250,25 +250,6 @@ class LeadDetectiveAgent(BaseAgent):
         )
 
         # Produce the draft conclusion
-        conclusion = self._chat(system, user)
+        return self._chat(system, user)
 
-        # ---- HARD GUARANTEE for levels 4 & 5: never allow Butler as final line ----
-        if difficulty in ("very_hard", "extreme"):
-            import re as _re
-            # Pick a deterministic NON-Butler fallback suspect
-            non_butlers = [s for s in facts.suspects if s.lower() != "butler"]
-            fallback = non_butlers[0] if non_butlers else (facts.suspects[0] if facts.suspects else "Housekeeper")
 
-            # Normalize any attempt to set Final Accusation to Butler (including tricky casing/spacing)
-            # Strategy: force the final line to our fallback regardless of what the model wrote.
-            if "final accusation" in conclusion.lower():
-                conclusion = _re.sub(
-                    r"(?is)(final\s*accusation\s*:\s*).*$",
-                    r"\1" + fallback,
-                    conclusion.strip()
-                )
-            else:
-                # If the model forgot the line, add a safe one.
-                conclusion = conclusion.rstrip() + f"\nFinal Accusation: {fallback}"
-
-        return conclusion
