@@ -1,5 +1,6 @@
 from appwrite.client import Client
 from appwrite.services.databases import Databases
+from appwrite.query import Query
 
 ENDPOINT = "https://fra.cloud.appwrite.io/v1"
 PROJECT  = "ctf-dn"
@@ -7,13 +8,22 @@ API_KEY  = "standard_ca0037c350c3ed6c3501e10dc93ff712c4941062452ec4d281238cfa01d
 DB_ID    = "68aeb43e0002f79c45dc"
 COLL_ID  = "prompts"
 
+TEAM_FILTER = ""  # e.g. "The Sleuth Squad" to narrow results
+
 client = Client().set_endpoint(ENDPOINT).set_project(PROJECT).set_key(API_KEY)
 db = Databases(client)
 
-res = db.list_documents(DB_ID, COLL_ID)  # default limit ~25
-print(f"Total docs listed: {res['total']}")
+queries = [Query.order_desc("$createdAt"), Query.limit(100)]
+if TEAM_FILTER.strip():
+    queries.append(Query.equal("team_name", TEAM_FILTER.strip()))
+
+res = db.list_documents(DB_ID, COLL_ID, queries)
+print(f"Total in collection (server count): {res['total']}")
+print(f"Documents fetched this page: {len(res['documents'])}")
+
 for d in res["documents"]:
     print("-" * 40)
+    print("createdAt:", d.get("$createdAt"))
     print("team_name:", d.get("team_name"))
     print("level:", d.get("level"))
     print("isSuccess:", d.get("isSuccess"))
