@@ -177,6 +177,7 @@ with st.container():
 </ul>
 
 <p><strong>Team name rule:</strong> Use the same exact team name across all levels so your points add up correctly on the leaderboard.</p>
+<p><strong>* Important: We save each team’s prompt and result (win or loss) to help improve the mystery game for future players.</strong></p>
 </div>
         """,
         unsafe_allow_html=True,
