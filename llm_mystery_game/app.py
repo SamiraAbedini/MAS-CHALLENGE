@@ -191,7 +191,12 @@ st.divider()
 
 # Form
 with st.form("play"):
-    team_name = st.text_input("Your Team Name", placeholder="e.g., The Sleuth Squad")
+    team_name = st.text_input(
+        "Your Team Name",
+        placeholder="e.g., The Sleuth Squad (max 35 characters)",
+        max_chars=35,  # limit to 35 characters
+    ).strip()  # automatically trim spaces from both ends
+
     level = st.radio(
         "Select difficulty",
         ["level1", "level2", "level3", "level4", "level5"],
@@ -199,6 +204,7 @@ with st.form("play"):
         help="Levels 1–5. Win all five once for a +100 bonus.",
         horizontal=True,
     )
+
 
     st.markdown(f"**Witness role:** {ROGUE_ROLE}")
     player_instruction = st.text_area(
